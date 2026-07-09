@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>貓砂清理輪值紀錄表 🐾</title>
+    <style>
+        :root {
+            --primary-color: #ff9f43;
+            --secondary-color: #ee5253;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2d3436;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-top: 0;
+            font-size: 24px;
+        }
+
+        .cat-icon {
+            font-size: 40px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        /* 按鈕區域 */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        button {
+            border: none;
+            padding: 15px 10px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            color: white;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-user1 { background-color: #54a0ff; }
+        .btn-user2 { background-color: #5f27cd; }
+        .btn-clear { 
+            background-color: #b2bec3; 
+            grid-column: span 2; 
+            padding: 8px; 
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        /* 統計區 */
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: #f1f2f6;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        /* 歷史紀錄列表 */
+        .history-title {
+            font-size: 16px;
+            font-weight: bold;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 8px;
+            margin-bottom: 10px;
+        }
+
+        .log-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 5px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="cat-icon">🐾 🐈</div>
+    <h1>鏟屎官點名系統</h1>
+    
+    <div class="btn-group">
+        <button class="btn-user1" onclick="addLog('室友 A')">🙋‍♂️ 室友 A 清理了</button>
+        <button class="btn-user2" onclick="addLog('室友 B')">🙋‍♀️ 室友 B 清理了</button>
+        <button class="btn-clear" onclick="clearAll()">重設所有資料</button>
+    </div>
+
+    <div class="stats">
+        <div id="stat-user1">室友 A: 0 次</div>
+        <div id="stat-user2">室友 B: 0 次</div>
+    </div>
+
+    <div class="history-title">歷史紀錄 (最新在最上)</div>
+    <ul class="log-list" id="logList">
+        </ul>
+</div>
+
+<script>
+    // 初始化資料
+    let dataLog = JSON.parse(localStorage.getItem('catLitterLog')) || [];
+
+    // 格式化日期時間 (YYYY/MM/DD HH:mm)
+    function formatDateTime() {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const hh = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        return `${yyyy}/${mm}/${dd} ${hh}:${min}`;
+    }
+
+    // 新增紀錄
+    function addLog(name) {
+        const timestamp = formatDateTime();
+        const id = Date.now(); // 用時間戳當唯一 ID 方便刪除
+        
+        dataLog.unshift({ id, name, time: timestamp }); // 新的排前面
+        saveAndRender();
+    }
+
+    // 刪除單筆紀錄
+    function deleteLog(id) {
+        if(confirm('確定要刪除這條紀錄嗎？')) {
+            dataLog = dataLog.filter(item => item.id !== id);
+            saveAndRender();
+        }
+    }
+
+    // 清除全部資料
+    function clearAll() {
+        if (confirm('確定要清空所有紀錄嗎？此操作無法復原！')) {
+            dataLog = [];
+            saveAndRender();
+        }
+    }
+
+    // 儲存並更新畫面
+    function saveAndRender() {
+        localStorage.setItem('catLitterLog', JSON.stringify(dataLog));
+        render();
+    }
+
+    // 渲染畫面與統計
+    function render() {
+        const listEl = document.getElementById('logList');
+        listEl.innerHTML = '';
+
+        let countA = 0;
+        let countB = 0;
+
+        dataLog.forEach(item => {
+            // 計算統計
+            if (item.name === '室友 A') countA++;
+            if (item.name === '室友 B') countB++;
+
+            // 產生列表 HTML
+            const li = document.createElement('li');
+            li.className = 'log-item';
+            li.innerHTML = `
+                <span><strong>${item.name}</strong> <small style="color:#666; margin-left:8px;">${item.time}</small></span>
+                <button class="delete-btn" onclick="deleteLog(${item.id})">❌</button>
+            `;
+            listEl.appendChild(li);
+        });
+
+        // 更新統計文字
+        document.getElementById('stat-user1').innerText = `室友 A: ${countA} 次`;
+        document.getElementById('stat-user2').innerText = `室友 B: ${countB} 次`;
+    }
+
+    // 網頁載入時先渲染一次
+    render();
+</script>
+
+</body>
+</html>
